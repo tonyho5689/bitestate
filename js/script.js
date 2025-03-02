@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const property = properties[propertySelect.value];
         
         investmentValue.textContent = `${property.currency}${amount.toLocaleString()}`;
-        tokenPrice.textContent = `${property.currency}${property.tokenPrice}`;
+        tokenPrice.textContent = `${property.currency}${property.tokenPrice.toLocaleString()}`;
         
         const tokens = Math.floor(amount / property.tokenPrice);
         tokensReceived.textContent = tokens.toLocaleString();
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!tokenAmount || !tokenTotal) return;
         
         const amount = parseInt(tokenAmount.value) || 0;
-        const price = 1125; // Current token price in HKD
+        const price = 1125; // Current token price in HKD (based on 12.5% appreciation from 1,000)
         const total = amount * price;
         
         tokenTotal.value = formatCurrency(total, '').replace('HK$', '');
@@ -129,12 +129,96 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Create a sample price chart for the marketplace
+    const createMarketChart = function() {
+        const marketChartEl = document.querySelector('.market-activity-chart');
+        if (!marketChartEl) return;
+        
+        // Clear placeholder
+        marketChartEl.innerHTML = '';
+        
+        // Create canvas for chart
+        const canvas = document.createElement('canvas');
+        canvas.id = 'priceHistoryChart';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        marketChartEl.appendChild(canvas);
+        
+        // Sample data - Token price over last 30 days
+        const basePrice = 1000;
+        const labels = Array.from({length: 30}, (_, i) => `Day ${30-i}`);
+        const data = [
+            1000, 1002, 1005, 1008, 1006, 1007, 1014, 1019, 
+            1024, 1030, 1026, 1032, 1040, 1048, 1054, 1062, 
+            1065, 1068, 1074, 1082, 1085, 1092, 1096, 1100,
+            1104, 1108, 1112, 1116, 1120, 1125
+        ];
+        
+        // Simulating chart with divs since we can't use real chart libraries here
+        const chartContainer = document.createElement('div');
+        chartContainer.className = 'simulated-chart';
+        chartContainer.style.height = '200px';
+        chartContainer.style.display = 'flex';
+        chartContainer.style.alignItems = 'flex-end';
+        chartContainer.style.justifyContent = 'space-between';
+        chartContainer.style.padding = '10px';
+        chartContainer.style.background = '#f8f9fa';
+        chartContainer.style.borderRadius = '8px';
+        
+        // Min and max values for scaling
+        const minValue = Math.min(...data);
+        const maxValue = Math.max(...data);
+        const range = maxValue - minValue;
+        
+        // Create bars
+        data.forEach((value, index) => {
+            const normalizedHeight = ((value - minValue) / range) * 150 + 20; // 20px minimum height
+            
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar';
+            bar.style.width = '3px';
+            bar.style.height = `${normalizedHeight}px`;
+            bar.style.backgroundColor = value > data[index-1] || index === 0 ? '#28a745' : '#dc3545';
+            bar.style.borderRadius = '2px';
+            bar.style.position = 'relative';
+            
+            // Tooltip on hover
+            bar.title = `Day ${30-index}: HK$${value.toLocaleString()}`;
+            
+            chartContainer.appendChild(bar);
+        });
+        
+        // Price info
+        const priceInfo = document.createElement('div');
+        priceInfo.className = 'price-info';
+        priceInfo.style.marginTop = '15px';
+        priceInfo.style.textAlign = 'center';
+        
+        const currentPrice = document.createElement('div');
+        currentPrice.className = 'current-price';
+        currentPrice.innerHTML = `<strong>Current Price:</strong> <span style="color:#28a745;font-weight:bold;">HK$${data[data.length-1].toLocaleString()}</span>`;
+        
+        const priceChange = document.createElement('div');
+        priceChange.className = 'price-change';
+        const changeAmount = data[data.length-1] - data[0];
+        const changePercent = ((changeAmount / data[0]) * 100).toFixed(1);
+        priceChange.innerHTML = `<strong>30-Day Change:</strong> <span style="color:#28a745;font-weight:bold;">+${changePercent}% (HK$${changeAmount.toLocaleString()})</span>`;
+        
+        priceInfo.appendChild(currentPrice);
+        priceInfo.appendChild(priceChange);
+        
+        // Add all elements to chart
+        marketChartEl.appendChild(chartContainer);
+        marketChartEl.appendChild(priceInfo);
+    };
+    
+    // Create and display the chart
+    createMarketChart();
+    
     // Portfolio chart placeholder (would use a real chart library in production)
     document.querySelectorAll('.chart-placeholder').forEach(placeholder => {
         if (placeholder.parentElement.classList.contains('portfolio-chart')) {
             placeholder.textContent = 'Portfolio Growth Chart (Visualization would be here)';
-        } else if (placeholder.parentElement.classList.contains('market-activity-chart')) {
-            placeholder.textContent = 'Price History Chart (Last 30 Days)';
         } else if (placeholder.parentElement.classList.contains('history-chart')) {
             placeholder.textContent = 'Monthly Rental Income Chart (Last 12 Months)';
         }
