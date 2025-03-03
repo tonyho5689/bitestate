@@ -1,33 +1,83 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Roadmap navigation
-    const roadmapItems = document.querySelectorAll('.roadmap-item');
-    roadmapItems.forEach(item => {
-        item.addEventListener('click', function() {
-            // Could add animation or expand functionality
-            console.log(`Roadmap item ${this.id} clicked`);
-        });
-    });
+    console.log("DOM fully loaded and parsed");
 
-    // Demo tabs functionality
-    const demoTabs = document.querySelectorAll('.demo-tab');
-    const demoPanels = document.querySelectorAll('.demo-panel');
-    
-    demoTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Remove active class from all tabs and panels
-            demoTabs.forEach(t => t.classList.remove('active'));
-            demoPanels.forEach(p => p.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            this.classList.add('active');
-            
-            // Show corresponding panel
-            const panelId = `${this.dataset.tab}-panel`;
-            document.getElementById(panelId).classList.add('active');
+    // ======== TAB SYSTEM INITIALIZATION ========
+    function setupTabSystem() {
+        console.log("Setting up tab system...");
+        const tabs = document.querySelectorAll('.demo-tab');
+        const panels = document.querySelectorAll('.demo-panel');
+        
+        console.log(`Found ${tabs.length} tabs and ${panels.length} panels`);
+        
+        if (!tabs.length || !panels.length) {
+            console.error("Tabs or panels not found");
+            return;
+        }
+        
+        // First, hide all panels
+        panels.forEach(panel => {
+            panel.style.display = 'none';
         });
-    });
+        
+        // Then, show only the active panel
+        const activeTab = document.querySelector('.demo-tab.active') || tabs[0];
+        if (activeTab) {
+            activeTab.classList.add('active');
+            const activeTabName = activeTab.getAttribute('data-tab');
+            const activePanelId = `${activeTabName}-panel`;
+            const activePanel = document.getElementById(activePanelId);
+            
+            if (activePanel) {
+                activePanel.style.display = 'block';
+                console.log(`Activated panel: ${activePanelId}`);
+            } else {
+                console.error(`Panel not found: ${activePanelId}`);
+            }
+        }
+        
+        // Set up click handlers for all tabs
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                console.log(`Tab clicked: ${tabName}`);
+                
+                // Remove active class from all tabs and hide all panels
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.style.display = 'none');
+                
+                // Activate clicked tab
+                this.classList.add('active');
+                
+                // Show corresponding panel
+                const panelId = `${tabName}-panel`;
+                const panel = document.getElementById(panelId);
+                
+                if (panel) {
+                    panel.style.display = 'block';
+                    console.log(`Showing panel: ${panelId}`);
+                    
+                    // Special handling for different tabs
+                    if (tabName === 'marketplace') {
+                        console.log('Refreshing marketplace charts');
+                        initMarketplaceChart();
+                    } else if (tabName === 'portfolio') {
+                        console.log('Refreshing portfolio data');
+                        updatePortfolioView();
+                    } else if (tabName === 'governance') {
+                        console.log('Refreshing rental income data');
+                        refreshRentalData();
+                    } else if (tabName === 'invest') {
+                        console.log('Updating investment calculator');
+                        updateCalculator();
+                    }
+                } else {
+                    console.error(`Panel not found: ${panelId}`);
+                }
+            });
+        });
+    }
 
-    // Investment simulator functionality
+    // ======== INVESTMENT SIMULATOR ========
     const investmentSlider = document.getElementById('investment-amount');
     const investmentValue = document.getElementById('investment-value');
     const tokenPrice = document.getElementById('token-price');
@@ -36,71 +86,90 @@ document.addEventListener('DOMContentLoaded', function() {
     const estimatedIncome = document.getElementById('estimated-income');
     const propertySelect = document.getElementById('property-select');
     
-    // Property data (would be fetched from API in a real implementation)
+    // Property data
     const properties = {
-        property1: { tokenPrice: 1000, roi: 8.5, currency: 'HK$' }
+        property1: { tokenPrice: 6900, roi: 8.5, currency: 'HK$' }
     };
     
     // Update investment calculator
     function updateCalculator() {
-        if (!investmentSlider || !propertySelect) return;
+        if (!investmentSlider || !propertySelect) {
+            console.error("Investment slider or property select not found");
+            return;
+        }
         
         const amount = parseInt(investmentSlider.value);
         const property = properties[propertySelect.value];
         
-        investmentValue.textContent = `${property.currency}${amount.toLocaleString()}`;
-        tokenPrice.textContent = `${property.currency}${property.tokenPrice.toLocaleString()}`;
+        console.log(`Updating calculator with amount: ${amount}`);
         
-        const tokens = Math.floor(amount / property.tokenPrice);
-        tokensReceived.textContent = tokens.toLocaleString();
+        // Update investment value display
+        if (investmentValue) {
+            investmentValue.textContent = `${property.currency}${amount.toLocaleString()}`;
+        }
         
-        estimatedRoi.textContent = `${property.roi}%`;
+        // Update token price display
+        if (tokenPrice) {
+            tokenPrice.textContent = `${property.currency}6,900`;
+        }
         
-        const income = (amount * property.roi / 100).toFixed(2);
-        estimatedIncome.textContent = `${property.currency}${income}`;
+        // Calculate tokens received
+        const tokens = Math.floor(amount / 6900);
+        if (tokensReceived) {
+            tokensReceived.textContent = tokens.toLocaleString();
+        }
+        
+        // Update ROI display
+        if (estimatedRoi) {
+            estimatedRoi.textContent = `${property.roi}%`;
+        }
+        
+        // Calculate annual income
+        const income = (tokens * 587).toFixed(0);
+        if (estimatedIncome) {
+            estimatedIncome.textContent = `${property.currency}${income}`;
+        }
     }
     
-    // Add event listeners
-    if (investmentSlider && propertySelect) {
+    // Set up investment slider event listener
+    if (investmentSlider) {
         investmentSlider.addEventListener('input', updateCalculator);
-        propertySelect.addEventListener('change', updateCalculator);
-        
-        // Initialize calculator
-        updateCalculator();
     }
     
-    // Auto Market Maker functionality
-    const tokenActionTabs = document.querySelectorAll('.token-action');
-    const ammActionButton = document.querySelector('.amm-action-button');
+    // Initialize calculator on load
+    updateCalculator();
+    
+    // ======== MARKETPLACE FUNCTIONS ========
+    // Token transaction functionality
     const tokenAmount = document.getElementById('token-amount');
     const tokenTotal = document.getElementById('token-total');
+    const ammTokenPrice = document.getElementById('amm-token-price');
+    const ammPriceChange = document.getElementById('amm-price-change');
+    
+    function updateTokenTransaction() {
+        if (!tokenAmount || !tokenTotal) return;
+        
+        const amount = parseInt(tokenAmount.value) || 0;
+        const price = 7763; // Current token price (after 12.5% appreciation)
+        const total = amount * price;
+        
+        tokenTotal.value = formatCurrency(total, '').replace('HK$', '');
+    }
     
     // Format currency for display
     function formatCurrency(amount, currency = 'HK$') {
         return `${currency}${amount.toLocaleString()}`;
     }
     
-    // Token transaction calculation
-    function updateTokenTransaction() {
-        if (!tokenAmount || !tokenTotal) return;
-        
-        const amount = parseInt(tokenAmount.value) || 0;
-        const price = 1125; // Current token price in HKD (based on 12.5% appreciation from 1,000)
-        const total = amount * price;
-        
-        tokenTotal.value = formatCurrency(total, '').replace('HK$', '');
-    }
-    
-    // Add event listeners for AMM
     if (tokenAmount) {
         tokenAmount.addEventListener('input', updateTokenTransaction);
-        
-        // Initialize token transaction
-        updateTokenTransaction();
     }
     
-    // Handle token action tab changes (buy/sell)
-    if (tokenActionTabs.length > 0) {
+    // Buy/Sell button functionality
+    const tokenActionTabs = document.querySelectorAll('.token-action');
+    const ammActionButton = document.querySelector('.amm-action-button');
+    
+    if (tokenActionTabs.length && ammActionButton) {
         tokenActionTabs.forEach(tab => {
             tab.addEventListener('click', function() {
                 // Remove active class from all tabs
@@ -110,431 +179,139 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.classList.add('active');
                 
                 // Update button text
-                if (ammActionButton) {
-                    ammActionButton.textContent = this.dataset.action === 'buy' ? 'Buy Tokens' : 'Sell Tokens';
-                }
+                ammActionButton.textContent = this.dataset.action === 'buy' ? 'Buy Tokens' : 'Sell Tokens';
             });
         });
-    }
-    
-    // AMM button functionality
-    if (ammActionButton) {
+        
         ammActionButton.addEventListener('click', function() {
             const action = document.querySelector('.token-action.active').dataset.action;
             const amount = parseInt(tokenAmount.value) || 0;
             const total = parseFloat(tokenTotal.value.replace(/,/g, '')) || 0;
             
-            // In a real implementation, this would connect to a wallet or payment system
             alert(`In a real implementation, this would ${action} ${amount} tokens for ${formatCurrency(total)} through the Auto Market Maker.`);
         });
     }
     
-    // Create a sample price chart for the marketplace
-    const createMarketChart = function() {
-        const marketChartEl = document.querySelector('.market-activity-chart');
-        if (!marketChartEl) return;
+    // Marketplace chart
+    function initMarketplaceChart() {
+        console.log("Initializing marketplace chart");
         
-        // Clear placeholder
-        marketChartEl.innerHTML = '';
+        // The chart is already in the HTML, so no need to create it
+        // We just need to make sure it's displayed correctly
         
-        // Create chart container
-        const chartWrapper = document.createElement('div');
-        chartWrapper.className = 'chart-wrapper';
-        chartWrapper.style.position = 'relative';
-        chartWrapper.style.height = '220px';
-        chartWrapper.style.padding = '20px 10px 10px';
-        chartWrapper.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        chartWrapper.style.border = '1px solid rgba(0, 243, 255, 0.3)';
-        chartWrapper.style.marginBottom = '15px';
-        
-        // Chart title
-        const chartTitle = document.createElement('div');
-        chartTitle.className = 'chart-title';
-        chartTitle.innerHTML = 'HPLT TOKEN - 30 DAYS';
-        chartTitle.style.position = 'absolute';
-        chartTitle.style.top = '5px';
-        chartTitle.style.left = '10px';
-        chartTitle.style.fontSize = '0.8rem';
-        chartTitle.style.color = 'var(--primary-color)';
-        chartTitle.style.fontFamily = 'Orbitron, sans-serif';
-        
-        chartWrapper.appendChild(chartTitle);
-        
-        // Create chart grid
-        const gridContainer = document.createElement('div');
-        gridContainer.style.position = 'absolute';
-        gridContainer.style.top = '30px';
-        gridContainer.style.left = '0';
-        gridContainer.style.right = '0';
-        gridContainer.style.bottom = '0';
-        gridContainer.style.backgroundImage = `
-            repeating-linear-gradient(to right, rgba(0, 243, 255, 0.1), rgba(0, 243, 255, 0.1) 1px, transparent 1px, transparent 20%),
-            repeating-linear-gradient(to bottom, rgba(0, 243, 255, 0.1), rgba(0, 243, 255, 0.1) 1px, transparent 1px, transparent 25%)
-        `;
-        
-        chartWrapper.appendChild(gridContainer);
-        
-        // Sample data - Token price over last 30 days with more volatility
-        const basePrice = 1000;
-        const data = [
-            1000, 1005, 1012, 1008, 1015, 1022, 1019, 1025, 
-            1032, 1041, 1035, 1045, 1055, 1047, 1060, 1070, 
-            1065, 1078, 1085, 1080, 1095, 1105, 1098, 1108,
-            1112, 1105, 1115, 1118, 1120, 1125
-        ];
-        
-        // Container for the line chart
-        const chartContainer = document.createElement('div');
-        chartContainer.style.position = 'relative';
-        chartContainer.style.height = '180px';
-        chartContainer.style.marginTop = '10px';
-        
-        // Create SVG for the line chart
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', '100%');
-        svg.setAttribute('height', '100%');
-        svg.style.overflow = 'visible';
-        
-        // Min and max values for scaling
-        const minValue = Math.min(...data) * 0.995; // Add some padding
-        const maxValue = Math.max(...data) * 1.005;
-        const range = maxValue - minValue;
-        
-        // Create the line path
-        let pathD = '';
-        const pointsX = [];
-        const pointsY = [];
-        
-        data.forEach((value, index) => {
-            const x = (index / (data.length - 1)) * 100;
-            const y = 100 - (((value - minValue) / range) * 100);
+        const marketplacePanel = document.getElementById('marketplace-panel');
+        if (marketplacePanel) {
+            marketplacePanel.style.display = 'block';
             
-            if (index === 0) {
-                pathD += `M ${x} ${y}`;
+            // Make sure all SVG elements in the chart are visible
+            const svgElements = marketplacePanel.querySelectorAll('svg');
+            svgElements.forEach(svg => {
+                svg.style.display = 'block';
+                svg.style.visibility = 'visible';
+            });
+            
+            // Make sure chart container is visible
+            const chartContainer = marketplacePanel.querySelector('.market-activity-chart');
+            if (chartContainer) {
+                chartContainer.style.display = 'block';
+                chartContainer.style.visibility = 'visible';
+                console.log("Market chart container displayed");
             } else {
-                pathD += ` L ${x} ${y}`;
+                console.error("Market chart container not found");
             }
-            
-            pointsX.push(x);
-            pointsY.push(y);
-        });
-        
-        // Create the area fill path
-        let areaD = pathD + ` L ${pointsX[pointsX.length - 1]} 100 L 0 100 Z`;
-        
-        // Create area fill
-        const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        areaPath.setAttribute('d', areaD);
-        areaPath.setAttribute('fill', 'url(#chartGradient)');
-        areaPath.setAttribute('opacity', '0.3');
-        
-        // Create chart line
-        const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        linePath.setAttribute('d', pathD);
-        linePath.setAttribute('fill', 'none');
-        linePath.setAttribute('stroke', 'var(--primary-color)');
-        linePath.setAttribute('stroke-width', '2');
-        linePath.setAttribute('stroke-linecap', 'round');
-        linePath.setAttribute('stroke-linejoin', 'round');
-        
-        // Create gradient for area fill
-        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-        gradient.setAttribute('id', 'chartGradient');
-        gradient.setAttribute('x1', '0%');
-        gradient.setAttribute('y1', '0%');
-        gradient.setAttribute('x2', '0%');
-        gradient.setAttribute('y2', '100%');
-        
-        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop1.setAttribute('offset', '0%');
-        stop1.setAttribute('stop-color', 'var(--primary-color)');
-        
-        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stop2.setAttribute('offset', '100%');
-        stop2.setAttribute('stop-color', 'transparent');
-        
-        gradient.appendChild(stop1);
-        gradient.appendChild(stop2);
-        
-        // Add circles at data points
-        const dataPoints = document.createDocumentFragment();
-        pointsX.forEach((x, i) => {
-            if (i % 5 === 0 || i === pointsX.length - 1) { // Add points every 5 days and the last point
-                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                circle.setAttribute('cx', x);
-                circle.setAttribute('cy', pointsY[i]);
-                circle.setAttribute('r', '3');
-                circle.setAttribute('fill', 'var(--primary-color)');
-                circle.setAttribute('stroke', '#000');
-                circle.setAttribute('stroke-width', '1');
-                
-                const glowFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
-                glowFilter.setAttribute('id', `glow-${i}`);
-                
-                const feGaussianBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
-                feGaussianBlur.setAttribute('stdDeviation', '2');
-                feGaussianBlur.setAttribute('result', 'blur');
-                
-                const feComposite = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
-                feComposite.setAttribute('in', 'SourceGraphic');
-                feComposite.setAttribute('in2', 'blur');
-                feComposite.setAttribute('operator', 'atop');
-                
-                glowFilter.appendChild(feGaussianBlur);
-                glowFilter.appendChild(feComposite);
-                
-                circle.setAttribute('filter', `url(#glow-${i})`);
-                dataPoints.appendChild(glowFilter);
-                dataPoints.appendChild(circle);
-            }
-        });
-        
-        // Assemble the SVG
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        defs.appendChild(gradient);
-        
-        svg.appendChild(defs);
-        svg.appendChild(areaPath);
-        svg.appendChild(linePath);
-        svg.appendChild(dataPoints);
-        
-        chartContainer.appendChild(svg);
-        chartWrapper.appendChild(chartContainer);
-        
-        // Price info
-        const priceInfo = document.createElement('div');
-        priceInfo.className = 'price-info';
-        priceInfo.style.marginTop = '15px';
-        priceInfo.style.display = 'flex';
-        priceInfo.style.justifyContent = 'space-between';
-        priceInfo.style.alignItems = 'center';
-        priceInfo.style.padding = '10px';
-        priceInfo.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-        priceInfo.style.border = '1px solid rgba(0, 243, 255, 0.2)';
-        
-        const currentPrice = document.createElement('div');
-        currentPrice.className = 'current-price';
-        currentPrice.innerHTML = `<span style="color:#e0e0e0;font-family:'Orbitron',sans-serif;font-size:0.8rem;">CURRENT:</span> <span style="color:var(--primary-color);font-weight:bold;font-family:'Orbitron',sans-serif;text-shadow:var(--neon-shadow);">HK$${data[data.length-1].toLocaleString()}</span>`;
-        
-        const priceChange = document.createElement('div');
-        priceChange.className = 'price-change';
-        const changeAmount = data[data.length-1] - data[0];
-        const changePercent = ((changeAmount / data[0]) * 100).toFixed(1);
-        priceChange.innerHTML = `<span style="color:#e0e0e0;font-family:'Orbitron',sans-serif;font-size:0.8rem;">30D CHANGE:</span> <span style="color:var(--primary-color);font-weight:bold;font-family:'Orbitron',sans-serif;text-shadow:var(--neon-shadow);">+${changePercent}%</span>`;
-        
-        priceInfo.appendChild(currentPrice);
-        priceInfo.appendChild(priceChange);
-        
-        // Add all elements to chart
-        marketChartEl.appendChild(chartWrapper);
-        marketChartEl.appendChild(priceInfo);
-    };
-    
-    // Create and display the chart
-    createMarketChart();
-    
-    // Portfolio chart placeholder (would use a real chart library in production)
-    document.querySelectorAll('.chart-placeholder').forEach(placeholder => {
-        if (placeholder.parentElement.classList.contains('portfolio-chart')) {
-            placeholder.textContent = 'Portfolio Growth Chart (Visualization would be here)';
-        } else if (placeholder.parentElement.classList.contains('history-chart')) {
-            // Create a rental income chart
-            placeholder.innerHTML = '';
-            
-            // Create chart container
-            const chartWrapper = document.createElement('div');
-            chartWrapper.className = 'rental-chart-wrapper';
-            chartWrapper.style.position = 'relative';
-            chartWrapper.style.height = '180px';
-            chartWrapper.style.padding = '20px 10px 10px';
-            
-            // Chart title
-            const chartTitle = document.createElement('div');
-            chartTitle.className = 'chart-title';
-            chartTitle.innerHTML = 'MONTHLY RENTAL INCOME - 12 MONTHS';
-            chartTitle.style.position = 'absolute';
-            chartTitle.style.top = '5px';
-            chartTitle.style.left = '10px';
-            chartTitle.style.fontSize = '0.8rem';
-            chartTitle.style.color = 'var(--primary-color)';
-            chartTitle.style.fontFamily = 'Orbitron, sans-serif';
-            
-            chartWrapper.appendChild(chartTitle);
-            
-            // Create chart grid
-            const gridContainer = document.createElement('div');
-            gridContainer.style.position = 'absolute';
-            gridContainer.style.top = '30px';
-            gridContainer.style.left = '0';
-            gridContainer.style.right = '0';
-            gridContainer.style.bottom = '0';
-            gridContainer.style.backgroundImage = `
-                repeating-linear-gradient(to right, rgba(0, 243, 255, 0.1), rgba(0, 243, 255, 0.1) 1px, transparent 1px, transparent 8.33%),
-                repeating-linear-gradient(to bottom, rgba(0, 243, 255, 0.1), rgba(0, 243, 255, 0.1) 1px, transparent 1px, transparent 25%)
-            `;
-            
-            chartWrapper.appendChild(gridContainer);
-            
-            // Sample data - Monthly rental income
-            const data = [
-                284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284, 284
-            ];
-            
-            // Container for the bar chart
-            const chartContainer = document.createElement('div');
-            chartContainer.style.position = 'relative';
-            chartContainer.style.height = '140px';
-            chartContainer.style.marginTop = '30px';
-            chartContainer.style.display = 'flex';
-            chartContainer.style.alignItems = 'flex-end';
-            chartContainer.style.justifyContent = 'space-around';
-            
-            // Create months labels
-            const months = [
-                'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'
-            ];
-            
-            // Create bars
-            months.forEach((month, index) => {
-                // Bar container
-                const barContainer = document.createElement('div');
-                barContainer.style.display = 'flex';
-                barContainer.style.flexDirection = 'column';
-                barContainer.style.alignItems = 'center';
-                barContainer.style.width = '8%';
-                
-                // Bar
-                const bar = document.createElement('div');
-                bar.style.width = '100%';
-                bar.style.height = '100px';
-                bar.style.backgroundColor = 'var(--primary-color)';
-                bar.style.boxShadow = 'var(--neon-shadow)';
-                bar.style.position = 'relative';
-                bar.style.marginBottom = '5px';
-                
-                // Value label
-                const valueLabel = document.createElement('div');
-                valueLabel.textContent = `HK$${data[index]}`;
-                valueLabel.style.color = 'var(--primary-color)';
-                valueLabel.style.fontSize = '0.7rem';
-                valueLabel.style.fontFamily = 'Orbitron, sans-serif';
-                valueLabel.style.position = 'absolute';
-                valueLabel.style.top = '-20px';
-                valueLabel.style.left = '50%';
-                valueLabel.style.transform = 'translateX(-50%)';
-                valueLabel.style.whiteSpace = 'nowrap';
-                
-                // Month label
-                const monthLabel = document.createElement('div');
-                monthLabel.textContent = month;
-                monthLabel.style.color = '#e0e0e0';
-                monthLabel.style.fontSize = '0.7rem';
-                monthLabel.style.marginTop = '5px';
-                
-                bar.appendChild(valueLabel);
-                barContainer.appendChild(bar);
-                barContainer.appendChild(monthLabel);
-                chartContainer.appendChild(barContainer);
-            });
-            
-            // Add the chart to the wrapper
-            chartWrapper.appendChild(chartContainer);
-            
-            // Add to placeholder
-            placeholder.appendChild(chartWrapper);
+        } else {
+            console.error("Marketplace panel not found");
         }
-    });
-    
-    // Property image gallery thumbnails
-    const mainImage = document.querySelector('.main-image');
-    const thumbnails = document.querySelectorAll('.thumbnail');
-    
-    if (mainImage && thumbnails.length > 0) {
-        thumbnails.forEach(thumb => {
-            thumb.addEventListener('click', function() {
-                // Update main image source
-                mainImage.src = this.src;
-                mainImage.alt = this.alt;
-                
-                // Highlight active thumbnail
-                thumbnails.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
     }
     
-    // Form submission
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    // ======== PORTFOLIO FUNCTIONS ========
+    function updatePortfolioView() {
+        console.log("Updating portfolio view");
+        
+        // Make sure the portfolio panel is visible with all its contents
+        const portfolioPanel = document.getElementById('portfolio-panel');
+        if (portfolioPanel) {
+            portfolioPanel.style.display = 'block';
             
-            // Get form data
-            const formData = new FormData(this);
-            const formValues = {};
-            for (let [key, value] of formData.entries()) {
-                formValues[key] = value;
+            // Make sure SVG chart is visible
+            const chartElement = portfolioPanel.querySelector('.portfolio-growth-chart');
+            if (chartElement) {
+                chartElement.style.display = 'block';
+                chartElement.style.visibility = 'visible';
+                console.log("Portfolio chart displayed");
+            } else {
+                console.error("Portfolio chart not found");
             }
             
-            // Simulate form submission
-            console.log('Form submitted with values:', formValues);
-            
-            // Show success message
-            alert('Thank you for your message! We will get back to you soon.');
-            
-            // Reset form
-            this.reset();
-        });
-    }
-    
-    // Newsletter subscription
-    const newsletterForm = document.querySelector('.newsletter-form');
-    if (newsletterForm) {
-        newsletterForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Simulate subscription
-            const email = this.querySelector('input[type="email"]').value;
-            console.log('Newsletter subscription:', email);
-            
-            // Show success message
-            alert('Thank you for subscribing to our newsletter!');
-            
-            // Reset form
-            this.reset();
-        });
-    }
-    
-    // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
-            
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                // Smooth scroll to target
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            // Make sure other elements are visible
+            const summaryElement = portfolioPanel.querySelector('.portfolio-summary');
+            if (summaryElement) {
+                summaryElement.style.display = 'flex';
+                console.log("Portfolio summary displayed");
             }
-        });
-    });
+            
+            const assetsElement = portfolioPanel.querySelector('.portfolio-assets');
+            if (assetsElement) {
+                assetsElement.style.display = 'block';
+                console.log("Portfolio assets displayed");
+            }
+        } else {
+            console.error("Portfolio panel not found");
+        }
+    }
     
-    // Invest button functionality
+    // ======== RENTAL INCOME FUNCTIONS ========
+    function refreshRentalData() {
+        console.log("Refreshing rental income data");
+        
+        // Make sure the rental income panel is visible with all its contents
+        const governancePanel = document.getElementById('governance-panel');
+        if (governancePanel) {
+            governancePanel.style.display = 'block';
+            
+            // Make sure SVG chart is visible
+            const chartElement = governancePanel.querySelector('.rental-chart');
+            if (chartElement) {
+                chartElement.style.display = 'block';
+                chartElement.style.visibility = 'visible';
+                console.log("Rental chart displayed");
+            } else {
+                console.error("Rental chart not found");
+            }
+            
+            // Make sure other elements are visible
+            const holdingsTable = governancePanel.querySelector('.holdings-table');
+            if (holdingsTable) {
+                holdingsTable.style.display = 'block';
+                console.log("Holdings table displayed");
+            }
+            
+            const distributionCard = governancePanel.querySelector('.month-distribution-card');
+            if (distributionCard) {
+                distributionCard.style.display = 'block';
+                console.log("Distribution card displayed");
+            }
+            
+            const historyList = governancePanel.querySelector('.distribution-list');
+            if (historyList) {
+                historyList.style.display = 'block';
+                console.log("Distribution history displayed");
+            }
+        } else {
+            console.error("Governance panel not found");
+        }
+    }
+    
+    // ======== INVEST BUTTON ========
     const investButton = document.getElementById('invest-button');
     if (investButton) {
         investButton.addEventListener('click', function() {
-            // In a real implementation, this would open a payment gateway or connect to a wallet
             alert('In a real implementation, this would connect to your crypto wallet to complete the investment transaction.');
         });
     }
-
-    // Animate elements when they come into view
-    const animateOnScroll = function() {
+    
+    // ======== SETUP SCROLL ANIMATIONS ========
+    function animateOnScroll() {
         const elements = document.querySelectorAll('.feature-card, .property-card, .roadmap-item, .stat-box');
         
         elements.forEach(element => {
@@ -545,11 +322,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 element.classList.add('visible');
             }
         });
-    };
+    }
     
-    // Initial check for elements in view
+    // Initialize scroll animations
     animateOnScroll();
-    
-    // Listen for scroll events
     window.addEventListener('scroll', animateOnScroll);
+    
+    // ======== INITIALIZE EVERYTHING ========
+    // This is the main function that sets up everything
+    function initializeAll() {
+        console.log("Initializing all systems...");
+        
+        // Set up the tab system
+        setupTabSystem();
+        
+        // Initialize calculations
+        updateCalculator();
+        updateTokenTransaction();
+        
+        // Set default active tab to Invest
+        document.querySelector('.demo-tab[data-tab="invest"]').click();
+        
+        // Pre-initialize all panels to ensure they're ready
+        // This helps avoid display issues when switching tabs
+        setTimeout(() => {
+            console.log("Pre-initializing all panels...");
+            initMarketplaceChart();
+            updatePortfolioView();
+            refreshRentalData();
+        }, 500);
+    }
+    
+    // Run the initialization
+    initializeAll();
 });
